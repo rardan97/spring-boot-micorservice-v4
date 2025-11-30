@@ -1,15 +1,25 @@
-# Microservices Architecture V3 - Circuit Breaker (resilience4j & retry)
+# Microservices Architecture V4 - Monitoring (Prometheus + Grafana)
 
-This project demonstrates a microservices architecture built using Spring Boot and Resilience4j, implementing fault tolerance with Circuit Breaker and Retry mechanisms.
+This project demonstrates a microservices architecture built using Spring Boot and monitored using Prometheus and Grafana.
 
 - Spring Boot
 - Spring Security
 - Resilience4j (Circuit Breaker & Retry)
+- actuator
+- prometheus
 - PostgreSQL
 - Spring Cloud Gateway (API Gateway)
 - Eureka Server (Service Discovery & Registry)
 - Swagger (OpenAPI)
 - Docker
+
+
+## Service Layer & Monitoring
+
+The microservices architecture with monitoring layers:
+<p align="center">
+  <img src="flow-monitoring.png" alt="Architecture Diagram" width="700"/>
+</p>
 
 
 ## Architecture Diagram
@@ -30,160 +40,79 @@ The following interactions occur between services:
 </p>
 
 
-# Example: Calling a Service with Circuit Breaker & Retry (Blocking)
-Since this project uses Spring MVC (not reactive), it's acceptable to use .block() on WebClient for synchronous calls.
-
 
 ## Add Dependency in service
 
 Add the following dependencies to your service's pom.xml:
 
 ```xml
-<dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.github.resilience4j</groupId>
-    <artifactId>resilience4j-retry</artifactId>
-</dependency>
+  <dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+  <dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-prometheus</artifactId>
+  </dependency>
 ```
 
-### Resilience4j Configuration (application.yml)
+
+## Configuration Monitoring (Prometheus)
+Make sure this configuration is at the root level, not under spring:
+
 ```yml
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10000
-        permittedNumberOfCallsInHalfOpenState: 3
-    instances:
-      userService:
-        baseConfig: default
+global:
+  scrape_interval: 5s
 
-  retry:
-    instances:
-      userService:
-        maxRetryAttempts: 3
-        waitDuration: 2s
-        retryExceptions:
-          - org.springframework.web.reactive.function.client.WebClientRequestException
-          - java.util.concurrent.TimeoutException
+scrape_configs:
+  - job_name: 'api-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['api-gateway:8080']
 
+  - job_name: 'eureka-server'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['eurekaserver:8761']
+
+  - job_name: 'auth-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['auth-service:8081']
+
+  - job_name: 'user-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['user-service:8082']
+
+  - job_name: 'department-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['department-service:8083']
+
+  - job_name: 'address-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['address-service:8084']
+
+  - job_name: 'task-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['task-service:8085']
+```
+
+### Monitoring Configuration (application.yml)
+```yml
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,circuitbreakerevents
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
 ```
 
-
-## WebClient Config
-```java
-@Configuration
-public class WebClientConfig {
-
-    @Bean
-    @LoadBalanced
-    public WebClient.Builder webClientBuilder() {
-        return WebClient.builder();
-    }
-
-    @Bean
-    @Qualifier("userClient")
-    public WebClient userWebClient(WebClient.Builder builder) {
-        return builder
-                .baseUrl("lb://user-service")
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
-    }
-}
-```
-
-## Synchronous WebClient with Circuit Breaker & Retry
-```java
-import com.blackcode.task_service.dto.UserDto;
-import com.blackcode.task_service.exception.DataNotFoundException;
-import com.blackcode.task_service.helper.TypeRefs;
-import com.blackcode.task_service.service.UserClientService;
-import com.blackcode.task_service.utils.ApiResponse;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-
-import java.time.Duration;
-
-@Service
-public class UserClientServiceImpl implements UserClientService {
-
-    private static final Logger logger = LoggerFactory.getLogger(UserClientServiceImpl.class);
-
-    private static final String USER_API_PATH = "/api/user/getUserById/";
-
-    private final WebClient userClient;
-
-    public UserClientServiceImpl(@Qualifier("userClient") WebClient userClient) {
-        this.userClient = userClient;
-    }
-
-    @Override
-    @Retry(name = "userService")
-    @CircuitBreaker(name = "userService", fallbackMethod = "fallback")
-    public UserDto getUserById(String userId) {
-        if (userId == null) return null;
-
-        String uri = USER_API_PATH + userId;
-        ParameterizedTypeReference<ApiResponse<UserDto>> typeRef = TypeRefs.userDtoResponse();
-        ApiResponse<UserDto> response = userClient.get()
-                .uri(uri)
-                .exchangeToMono(clientResponse -> {
-                    HttpStatusCode status = clientResponse.statusCode();
-                    logger.info("Response status: {}", status);
-
-                    if (status.isError()) {
-                        return clientResponse.bodyToMono(String.class).flatMap(errorBody -> {
-                            logger.error("Error response body: {}", errorBody);
-                            return Mono.error(new DataNotFoundException("User not found"));
-                        });
-                    }
-                    return clientResponse.bodyToMono(typeRef);
-                })
-                .timeout(Duration.ofSeconds(3))
-                .block();
-
-        if (response == null) {
-            logger.warn("No response for User ID {}", userId);
-            return null;
-        }
-        return response.getData();
-    }
-
-    public UserDto fallback(String userId, Throwable throwable) {
-        logger.error("Failed get data User by ID {}. Error: {}", userId, throwable.toString());
-        return null;
-    }
-}
-
-```
-
-Note: While blocking with .block() is acceptable in Spring MVC, you should still monitor for performance issues under high load.
-
-# Notes
-- This implementation is designed for Spring MVC (non-reactive) projects.
-- Using .block() is acceptable in imperative (synchronous) applications, but should be avoided in WebFlux.
-- The fallback method must match the original method's parameters and include a Throwable as the last argument.
-- This configuration helps your services remain resilient, fault-tolerant, and self-healing.
 
 
 ## Docker & Deployment
@@ -213,5 +142,21 @@ All requests are sent through the API Gateway at:
 ```
 http://localhost:8080
 ```
+
+# Monitoring URLs
+
+## Prometheus Targets:
+```
+http://localhost:9090/targets
+```
+
+## Grafana Dashboard:
+```
+http://localhost:3000/
+```
+
+- Grafana can visualize metrics from all services via Prometheus.
+
+- Import dashboards using Grafana dashboard ID 4701 for Spring Boot microservices metrics.
 
 
