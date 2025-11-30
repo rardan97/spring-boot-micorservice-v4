@@ -28,7 +28,7 @@ The microservices architecture with monitoring layers:
 </p>
 
 
-# Service-to-Service Communication
+## Service-to-Service Communication
 The following interactions occur between services:
 - Service Auth  -> Service User
 - Service User  -> Sevice Department
