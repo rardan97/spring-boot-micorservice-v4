@@ -25,8 +25,5 @@ public class SignUpReq {
 
     private String email;
 
-    private Long departmentId;
-
-    private Long addressId;
 
 }

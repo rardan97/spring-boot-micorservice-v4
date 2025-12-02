@@ -17,8 +17,4 @@ public class UserResSyn {
 
     private String email;
 
-    private String department;
-
-    private String address;
-
 }

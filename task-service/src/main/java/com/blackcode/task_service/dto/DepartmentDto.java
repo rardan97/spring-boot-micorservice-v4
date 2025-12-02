@@ -9,16 +9,14 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class UserDto {
+public class DepartmentDto {
 
-    private String userId;
+    private Long departmentId;
 
-    private String nama;
+    private String departmentName;
 
-    private String email;
+    private String departmentCode;
 
-    private DepartmentDto department;
-
-    private AddressDto address;
+    private String departmentDescription;
 
 }

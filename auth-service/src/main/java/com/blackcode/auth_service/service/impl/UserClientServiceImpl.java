@@ -47,8 +47,6 @@ public class UserClientServiceImpl implements UserClientService {
         request.setUserId(userAuth.getUserId());
         request.setNama(signUpReq.getNama());
         request.setEmail(signUpReq.getEmail());
-        request.setAddressId(signUpReq.getAddressId());
-        request.setDepartmentId(signUpReq.getDepartmentId());
 
         String uri = USER_API_PATH;
         ParameterizedTypeReference<ApiResponse<UserRes>> typeRef = TypeRefs.userDtoResponse();

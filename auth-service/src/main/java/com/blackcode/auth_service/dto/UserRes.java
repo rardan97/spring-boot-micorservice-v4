@@ -17,8 +17,4 @@ public class UserRes {
 
     private String email;
 
-    private String department;
-
-    private String address;
-
 }

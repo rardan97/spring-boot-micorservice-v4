@@ -17,7 +17,4 @@ public class UserReq {
 
     private String email;
 
-    private Long departmentId;
-
-    private Long addressId;
 }

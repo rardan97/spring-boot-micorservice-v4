@@ -68,8 +68,6 @@ public class UserServiceImpl implements UserService {
         user.setUserId(userReq.getUserId());
         user.setNama(userReq.getNama());
         user.setEmail(userReq.getEmail());
-        user.setDepartmentId(userReq.getDepartmentId());
-        user.setAddressId(userReq.getAddressId());
         User saveUser = userRepository.save(user);
 
         return mapToUserResSyn(saveUser);
@@ -117,8 +115,6 @@ public class UserServiceImpl implements UserService {
         userRes.setUserId(user.getUserId());
         userRes.setNama(user.getNama());
         userRes.setEmail(user.getEmail());
-        userRes.setAddress(user.getAddressId().toString());
-        userRes.setDepartment(user.getDepartmentId().toString());
         return userRes;
     }
 

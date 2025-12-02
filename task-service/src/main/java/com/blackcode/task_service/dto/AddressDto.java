@@ -9,16 +9,14 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class UserDto {
+public class AddressDto {
 
-    private String userId;
+    private Long addressId;
 
-    private String nama;
+    private String street;
 
-    private String email;
+    private String city;
 
-    private DepartmentDto department;
-
-    private AddressDto address;
+    private String province;
 
 }

@@ -71,7 +71,7 @@ public class DepartmentServiceImpl implements DepartmentService{
         departmentRes.setDepartmentId(department.getDepartmentId());
         departmentRes.setDepartmentName(department.getDepartmentName());
         departmentRes.setDepartmentCode(department.getDepartmentCode());
-        departmentRes.setDepartmentDescription(departmentRes.getDepartmentDescription());
+        departmentRes.setDepartmentDescription(department.getDepartmentDescription());
         return departmentRes;
     }
 }
