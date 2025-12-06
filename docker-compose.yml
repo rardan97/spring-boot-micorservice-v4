@@ -206,7 +206,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: admin
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8761/eureka/
     ports:
-      - "8084:8082"
+      - "8084:8084"
     networks:
       - microservices-v4
     healthcheck:
@@ -231,7 +231,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: admin
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8761/eureka/
     ports:
-      - "8085:8083"
+      - "8085:8085"
     networks:
       - microservices-v4
     healthcheck:

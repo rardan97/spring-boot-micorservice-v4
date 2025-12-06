@@ -11,7 +11,7 @@ FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
-EXPOSE 8082
+EXPOSE 8084
 
 ENTRYPOINT ["java", "-Xms512m", "-Xmx512m", "-jar", "/app/app.jar"]
 
@@ -21,6 +21,6 @@ ENTRYPOINT ["java", "-Xms512m", "-Xmx512m", "-jar", "/app/app.jar"]
 #
 #COPY target/*.jar app.jar
 #
-#EXPOSE 8082
+#EXPOSE 8084
 #
 #ENTRYPOINT ["java", "-Xms512m", "-Xmx512m", "-jar", "app.jar"]
